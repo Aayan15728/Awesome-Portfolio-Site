@@ -6,7 +6,7 @@ Thanks for helping improve this portfolio! Small fixes and big ideas are both we
 
 ```bash
 git clone <your-fork-url>
-cd awosome_portfolio-site
+cd awesome-portfolio-site
 npm install
 cp .env.example .env.local   # optional, every variable is optional
 npm run dev

@@ -1,4 +1,4 @@
-# awosome_portfolio-site
+# awesome-portfolio-site
 
 **A minimal, editorial personal portfolio: projects, writings, a living collection and a public goals tracker.**
 
