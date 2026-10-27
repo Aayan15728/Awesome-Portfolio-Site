@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -41,4 +42,4 @@ yarn-error.log*
 next-env.d.ts
 
 # visitor data (local DB — swap for a real DB in production)
-/data/visitors.json
+/data/*.json
