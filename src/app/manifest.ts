@@ -1,20 +1,22 @@
 import type { MetadataRoute } from "next";
+import { siteConfig } from "@/lib/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Aayan Sharma Portfolio",
-    short_name: "Aayan Sharma",
-    description: "Portfolio of Aayan Sharma, full stack developer.",
+    id: "/",
+    name: `${siteConfig.name} Portfolio`,
+    short_name: siteConfig.name,
+    description: siteConfig.description,
+    lang: "en",
     start_url: "/",
+    scope: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#ffffff",
+    background_color: "#FCFCFC",
+    theme_color: "#FCFCFC",
     icons: [
-      {
-        src: "/favicon.ico",
-        sizes: "any",
-        type: "image/x-icon",
-      },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

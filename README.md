@@ -1,64 +1,71 @@
-# Aayan Sharma Portfolio
+# awesome-portfolio-site
 
-**A premium, animation-rich personal portfolio built to showcase projects, personality, and proof of shipping.**
+**A minimal, editorial personal portfolio: projects, writings, a living collection and a public goals tracker.**
 
-**Tech stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4, Framer Motion, next-themes
+Built with Next.js 16, React 19, TypeScript, Tailwind CSS v4, Framer Motion and next-themes.
 
 ## Screenshots
 
 ![Portfolio Preview](./public/assets/preview-1.png)
 ![Portfolio Preview 2](./public/assets/preview-2.png)
-![Portfolio Preview 3](./public/assets/preview-3.png)
-![Portfolio Preview 4](./public/assets/preview-4.png)
-![Portfolio Preview 5](./public/assets/preview-5.png)
 
 ## Features
 
-- Modern one-page portfolio with clean section flow
-- Smooth reveal animations and subtle premium interactions
-- Light/dark theme toggle with persisted preference
-- Featured projects section with visual bento-style cards
-- Live GitHub contribution heatmap integration
-- Visitor counter (`/api/visitors`) with browser fingerprint dedupe
-- Social/contact links (GitHub, X, LinkedIn, email)
-- Built-in SEO foundation with metadata, Open Graph, Twitter cards, JSON-LD, robots, sitemap, and manifest
+- Light-first design with a dotted frame, serif headings and a dark mode
+- `⌘K` / `Ctrl K` command palette for quick navigation
+- `/projects`: filterable project cards with status, tags, Live and GitHub links
+- `/writings`: MDX blog with frontmatter, reading time, RSS (`/rss.xml`) and per-post metadata
+- `/collection`: books, must-watch videos, songs, movies and a wishlist, all typed arrays
+- `/goal`: public goals with a % per goal and an overall %; only the owner (password) can add, update, check off and delete
+- Live GitHub contribution heatmap and a unique-visitor counter
+- SEO foundation: metadata, Open Graph, Twitter cards, JSON-LD, robots, sitemap and manifest
 
-## Why This Exists
+## Quick start
 
-Most portfolio templates look nice but feel generic.
-
-This project exists to be a practical, open-source portfolio that balances strong visual identity, real project proof, fast setup, and production-ready SEO defaults.
-
-## Setup (3 Steps)
-
-1. **Install dependencies**
 ```bash
 npm install
-```
-
-2. **Create `.env.local`**
-```env
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
-```
-
-3. **Run locally**
-```bash
+cp .env.example .env.local   # optional
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Open <http://localhost:3000>.
+
+## Make it yours
+
+| What                     | Where                                                        |
+| ------------------------ | ------------------------------------------------------------ |
+| Name, bio links, SEO     | `src/lib/site.ts`, `src/app/page.tsx`                        |
+| Projects                 | `src/data/projects.ts` (screenshots go in `public/assets`)   |
+| Collection               | `src/data/collection.ts`                                     |
+| Writings                 | `content/writings/*.mdx`                                     |
+| Goals                    | edit live on `/goal` after unlocking with your password      |
+
+## Environment variables
+
+All optional, see [.env.example](./.env.example).
+
+| Variable                                         | Purpose                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                           | Canonical URL for SEO, sitemap and RSS                      |
+| `ADMIN_PASSWORD`                                 | Unlocks editing on `/goal` (without it the page is read-only) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`      | Persistent storage for goals and the visitor counter        |
+| `GITHUB_TOKEN`                                   | Optional; raises the rate limit for the footer's "last shipped" line |
+
+To use Supabase, run [`supabase/schema.sql`](./supabase/schema.sql) once in your project's SQL editor. The tables have Row Level Security enabled with no public policies, so only the server (using the service-role key, which must never be exposed to the browser) can read or write them.
+
+Without Supabase credentials data is stored in `./data/*.json`. That works locally but **does not persist on serverless hosts** (Vercel, Netlify), so configure Supabase before deploying if you use `/goal` or the visitor counter.
 
 ## Scripts
 
-- `npm run dev` - start local server
-- `npm run build` - production build
-- `npm run start` - run production build
-- `npm run lint` - run ESLint
+- `npm run dev` start the dev server
+- `npm run build` production build
+- `npm run start` run the production build
+- `npm run lint` run ESLint
 
 ## Contributing
 
-PRs are welcome. If you want to improve design, performance, or developer experience, feel free to open an issue or PR.
+PRs are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
 
 ## License
 
-MIT - see [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE).

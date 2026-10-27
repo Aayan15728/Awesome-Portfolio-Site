@@ -1,7 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider, ThemeColorSync } from "@/components/theme-provider";
+import { FloatingRail } from "@/components/floating-rail";
+import { CommandPalette } from "@/components/command-palette";
+import { BottomGlass } from "@/components/bottom-glass";
 import { personJsonLd, siteConfig } from "@/lib/site";
 
 // Load Inter for body text
@@ -18,8 +21,20 @@ const instrumentSerif = Instrument_Serif({
   variable: "--font-instrument-serif",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // lets the page extend under notches / home indicators; safe-area insets keep controls clear of them
+  viewportFit: "cover",
+  // browser UI colour; kept in sync with the theme toggle by <ThemeColorSync />
+  themeColor: "#FCFCFC",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.siteUrl),
+  applicationName: siteConfig.name,
+  appleWebApp: { capable: true, title: siteConfig.name, statusBarStyle: "default" },
+  formatDetection: { telephone: false },
   title: {
     default: siteConfig.title,
     template: "%s | Aayan Sharma",
@@ -86,17 +101,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${instrumentSerif.variable} antialiased`}>
-      <body className="min-h-screen bg-background text-foreground selection:bg-accent/30 selection:text-accent">
+      <body className="min-h-dvh bg-background text-foreground selection:bg-accent/30 selection:text-accent">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="glass-main relative mx-auto max-w-4xl min-h-screen w-full sm:px-12 px-4 transition-colors duration-300">
-            {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+          <ThemeColorSync />
+          {/* clips the 100vw-wide dotted rules; body overflow alone doesn't, since it's handed to the viewport */}
+          <div className="overflow-x-clip">
+            <div className="frame">{children}</div>
           </div>
-          {/* fixed bottom scroll-fade — the premium glass scroll transition */}
-          <div className="scroll-fade-overlay" />
+          <FloatingRail />
+          <CommandPalette />
+          {/* fixed bottom glass band: content blurs progressively as it scrolls underneath */}
+          <BottomGlass />
         </ThemeProvider>
       </body>
     </html>

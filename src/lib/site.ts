@@ -28,6 +28,12 @@ export const siteConfig = {
       process.env.VERCEL_URL
   ),
   image: "/assets/og-image.png",
+  /** Song (by title, from src/data/collection.ts) shown in the home-page music card. */
+  featuredSongTitle: "The Nights",
+  /** Used for the contribution graph and "last shipped" in the footer. */
+  githubUsername: "Aayan15728",
+  /** Shown as local time in the footer. */
+  location: { label: "India", timeZone: "Asia/Kolkata" },
   social: {
     github: "https://github.com/Aayan15728",
     x: "https://x.com/aayanships",
@@ -49,10 +55,8 @@ export const personJsonLd = {
     "Next.js",
     "React",
     "TypeScript",
-    "JavaScript",
     "Node.js",
-    "MongoDB",
+    "Supabase",
     "PostgreSQL",
-    "Prisma",
   ],
 } as const;

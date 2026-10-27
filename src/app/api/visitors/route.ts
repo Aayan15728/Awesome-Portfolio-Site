@@ -1,67 +1,44 @@
 /**
  * API route: /api/visitors
  *
- * POST  { fingerprint: string }  →  registers a unique visitor (no-op if already seen)
- * GET                            →  returns { count: number }
+ * POST  { fingerprint: string }  ->  registers a unique visitor (no-op if already seen)
+ * GET                            ->  returns { count: number }
  *
- * Storage: JSON file at <project-root>/data/visitors.json
- * ⚠️  Works perfectly for local dev and single-instance Node servers.
- *     For Netlify/Vercel (serverless) swap the fs calls with a hosted DB
- *     (Supabase, PlanetScale, Upstash Redis, Netlify Blobs, etc.)
+ * Storage goes through src/lib/store.ts: Supabase when configured, otherwise a local
+ * JSON file (dev only; not persistent on serverless hosts).
  */
 
 import { NextRequest } from "next/server";
-import fs from "fs";
-import path from "path";
+import { addToSet, setSize } from "@/lib/store";
 
-// ---------- helpers ----------------------------------------------------------
+const KEY = "visitors";
+// browsers send crypto.randomUUID(); reject anything else so the set can't be stuffed with junk
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const DATA_DIR  = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "visitors.json");
-
-function readIds(): string[] {
+export async function GET() {
   try {
-    if (!fs.existsSync(DATA_FILE)) return [];
-    const raw = fs.readFileSync(DATA_FILE, "utf-8").trim();
-    return raw ? (JSON.parse(raw) as string[]) : [];
+    return Response.json({ count: await setSize(KEY) });
   } catch {
-    return [];
+    return Response.json({ error: "Storage unavailable" }, { status: 503 });
   }
 }
 
-function writeIds(ids: string[]): void {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(ids), "utf-8");
-}
-
-// ---------- GET --------------------------------------------------------------
-
-export async function GET() {
-  const ids = readIds();
-  return Response.json({ count: ids.length });
-}
-
-// ---------- POST -------------------------------------------------------------
-
 export async function POST(request: NextRequest) {
-  let fingerprint: string | undefined;
+  let fingerprint: unknown;
 
   try {
-    const body = await request.json();
-    fingerprint = typeof body?.fingerprint === "string" ? body.fingerprint : undefined;
+    fingerprint = (await request.json())?.fingerprint;
   } catch {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!fingerprint) {
-    return Response.json({ error: "fingerprint required" }, { status: 400 });
+  if (typeof fingerprint !== "string" || !UUID.test(fingerprint)) {
+    return Response.json({ error: "valid fingerprint required" }, { status: 400 });
   }
 
-  const ids = readIds();
-  if (!ids.includes(fingerprint)) {
-    ids.push(fingerprint);
-    writeIds(ids);
+  try {
+    return Response.json({ count: await addToSet(KEY, fingerprint.toLowerCase()) });
+  } catch {
+    return Response.json({ error: "Storage unavailable" }, { status: 503 });
   }
-
-  return Response.json({ count: ids.length });
 }
