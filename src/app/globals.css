@@ -1,125 +1,261 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-line: var(--line);
   --color-border-subtle: var(--border);
   --color-accent: #006FEE;
-  
+
   --font-serif: var(--font-instrument-serif), serif;
   --font-sans: var(--font-inter), sans-serif;
 
   --radius-2xl: 1rem;
 }
 
+/* Light is the primary theme (modelled on athrix.me light mode). */
 :root {
-  --background: #FAFAFA;
-  --foreground: #000000;
-  --muted: #525252;
-  --border: rgba(0, 0, 0, 0.05); /* very subtle dark border */
+  --background: #FCFCFC;
+  --foreground: #171717;
+  --muted: #737373;
+  --line: rgba(0, 0, 0, 0.22);
+  --border: rgba(0, 0, 0, 0.06);
+  --frame-width: min(760px, 100vw);
 }
 
 .dark {
   --background: #0A0A0A;
-  --foreground: #FFFFFF;
+  --foreground: #F5F5F5;
   --muted: #A3A3A3;
-  --border: rgba(255, 255, 255, 0.05);
+  --line: rgba(255, 255, 255, 0.2);
+  --border: rgba(255, 255, 255, 0.06);
+}
+
+html {
+  scroll-behavior: smooth;
+  /* stop iOS Safari from inflating text after rotation */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* the full-bleed dotted rules are 100vw wide; never let them cause a scrollbar */
+  overflow-x: hidden; /* older browsers */
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* diagonal stripe texture — visible in the gutters outside the glass container */
+}
+
+/* ── Frame ─────────────────────────────────────────────────────────────── */
+/* A narrow centered column bounded by dotted vertical lines.               */
+.frame {
+  position: relative;
+  width: 100%;
+  max-width: var(--frame-width);
+  margin-inline: auto;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh; /* excludes mobile browser bars that slide in and out */
+}
+
+/* removes the 300ms tap delay and double-tap zoom on interactive elements */
+a,
+button,
+summary,
+[role="tab"],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+@media (min-width: 640px) {
+  .frame {
+    border-inline: 1px dotted var(--line);
+  }
+}
+
+/* Full-bleed dotted horizontal rule with crosshair dots where it meets the */
+/* frame edges. Place it between sections.                                  */
+.rule {
+  position: relative;
+  width: 100vw;
+  height: 1px;
+  margin-left: calc(50% - 50vw);
   background-image: repeating-linear-gradient(
-    -45deg,
-    transparent 0px,
-    transparent 19px,
-    rgba(0, 0, 0, 0.022) 19px,
-    rgba(0, 0, 0, 0.022) 20px
+    to right,
+    var(--line) 0 1px,
+    transparent 1px 4px
   );
 }
 
-.dark body {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent 0px,
-    transparent 19px,
-    rgba(255, 255, 255, 0.028) 19px,
-    rgba(255, 255, 255, 0.028) 20px
-  );
+@media (min-width: 640px) {
+  .rule::before,
+  .rule::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: var(--foreground);
+    opacity: 0.55;
+  }
+  .rule::before {
+    left: calc(50% - var(--frame-width) / 2 - 2px);
+  }
+  .rule::after {
+    right: calc(50% - var(--frame-width) / 2 - 2px);
+  }
 }
 
-/* ── Glass main container ─────────────────────────────────────────────── */
-/* The backdrop-blur blurs the stripe texture seen through the semi-opaque   */
-/* container, creating the frosted-glass boundary the user pointed to.       */
-.glass-main {
-  background: rgba(252, 252, 252, 0.84);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  border-left:  1px solid rgba(0, 0, 0, 0.055);
-  border-right: 1px solid rgba(0, 0, 0, 0.055);
-}
-.dark .glass-main {
-  background: rgba(8, 8, 8, 0.88);
-  border-left:  1px solid rgba(255, 255, 255, 0.065);
-  border-right: 1px solid rgba(255, 255, 255, 0.065);
-}
-
-/* ── Fixed bottom scroll-fade overlay ────────────────────────────────── */
-/* Sits in front of page content so that as the user scrolls, text fades  */
-/* cleanly under a frosted gradient — the premium scroll transition.       */
-.scroll-fade-overlay {
+/* ── Bottom glass band ─────────────────────────────────────────────────── */
+/* An invisible band pinned to the bottom of the viewport: page content       */
+/* frosts and blurs as it scrolls underneath. The blur is built from three    */
+/* stacked layers (light, medium, strong) whose masks overlap, so it ramps in */
+/* smoothly from nothing at the top edge instead of starting with a hard line.*/
+/* The layers are siblings, not nested, because a backdrop-filter parent      */
+/* would stop its children from seeing the page behind them.                  */
+.bottom-glass {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  height: 5rem;
-  pointer-events: none;
-  z-index: 30;
-  background: linear-gradient(to top, var(--background) 0%, transparent 100%);
-}
-
-
-html {
-  scroll-behavior: smooth;
-}
-
-/* ── Glassmorphism scroll-fade ──────────────────────────────────────────── */
-.glass-fade-section {
-  position: relative;
-}
-
-.glass-fade-section::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  inset-inline: 0;
   bottom: 0;
-  height: 3rem;
-  background: linear-gradient(to top, var(--background) 0%, transparent 100%);
-  backdrop-filter: blur(2px);
-  -webkit-mask-image: linear-gradient(to top, black 20%, transparent 100%);
-  mask-image: linear-gradient(to top, black 20%, transparent 100%);
+  height: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  pointer-events: none;
+  /* soft tint that also fades in from the top */
+  background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 45%, transparent) 100%);
 }
 
-/* ── Spotify iframe smooth fade-in ─────────────────────────────────────── */
-iframe[data-testid="embed-iframe"] {
-  display: block;
+.bottom-glass > i {
+  position: absolute;
+  inset: 0;
+}
+
+.bottom-glass > i:nth-child(1) {
+  -webkit-backdrop-filter: blur(1.5px);
+  backdrop-filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 45%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 45%, #000 100%);
+}
+
+.bottom-glass > i:nth-child(2) {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 20%, #000 65%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 20%, #000 65%, #000 100%);
+}
+
+.bottom-glass > i:nth-child(3) {
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 45%, #000 85%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 45%, #000 85%, #000 100%);
+}
+
+/* browsers without backdrop-filter: fall back to a soft fade */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bottom-glass {
+    background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 92%, transparent) 100%);
+  }
+}
+
+/* ── Theme switch: circular reveal ─────────────────────────────────────── */
+/* src/lib/theme-transition.ts animates a growing clip-path circle on the   */
+/* new snapshot; switch off the browser's default cross-fade so only the    */
+/* circle is visible.                                                        */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* bottom glass band fades away once the footer wordmark is reached */
+.bottom-glass {
+  transition: opacity 0.35s ease;
+}
+.bottom-glass.is-hidden {
   opacity: 0;
-  animation: fadeUp 0.6s ease 0.3s forwards;
 }
 
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+/* ── Music: "now playing" equalizer bars ───────────────────────────────── */
+@keyframes eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
   }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq 0.9s ease-in-out infinite;
+}
+.eq-bar:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.eq-bar:nth-child(3) {
+  animation-delay: -0.6s;
+}
+
+/* ── Vinyl records ─────────────────────────────────────────────────────── */
+.vinyl-disc {
+  background:
+    radial-gradient(circle at center, transparent 0 31%, rgba(255, 255, 255, 0.05) 31.5% 32%, transparent 32.5%),
+    repeating-radial-gradient(circle at center, #121212 0 1.5px, #1d1d1d 1.5px 3px);
+  animation: vinyl-spin 3.2s linear infinite;
+  animation-play-state: paused;
+}
+@keyframes vinyl-spin {
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: rotate(360deg);
+  }
+}
+.vinyl-disc[data-playing="true"] {
+  animation-play-state: running;
+}
+/* static light reflection on top of the spinning grooves */
+.vinyl-sheen {
+  background: conic-gradient(
+    from 20deg,
+    transparent 0deg,
+    rgba(255, 255, 255, 0.16) 30deg,
+    transparent 70deg,
+    transparent 190deg,
+    rgba(255, 255, 255, 0.1) 215deg,
+    transparent 250deg
+  );
+}
+
+@media print {
+  .bottom-glass {
+    display: none;
+  }
+  .frame {
+    border: 0;
+    min-height: 0;
+  }
+  .rule {
+    display: none;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .eq-bar {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+  .vinyl-disc {
+    animation: none;
+  }
+}

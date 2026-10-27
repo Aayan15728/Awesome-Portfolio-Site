@@ -4,6 +4,7 @@ import React from 'react';
 import { GitHubCalendar } from 'react-github-calendar';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
+import { useMounted } from '@/lib/use-mounted';
 
 interface GitHubContributionsProps {
   username: string;
@@ -17,11 +18,7 @@ const GitHubContributions: React.FC<GitHubContributionsProps> = ({
   className = ""
 }) => {
   const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useMounted();
 
   const theme = {
     light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
@@ -39,7 +36,7 @@ const GitHubContributions: React.FC<GitHubContributionsProps> = ({
   return (
     <div className={`relative overflow-hidden rounded-xl ${className}`}>
       <motion.div
-        className="w-full overflow-hidden rounded-xl bg-transparent backdrop-blur-none border-0 hover:shadow-sm transition-shadow duration-300"
+        className="w-full overflow-hidden rounded-xl bg-transparent border-0 hover:shadow-sm transition-shadow duration-300"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
