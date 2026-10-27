@@ -1,18 +1,23 @@
-﻿"use client";
-
-import { useState } from "react";
-import { ThemeToggle } from "@/components/theme-toggle";
+﻿import Image from "next/image";
+import Link from "next/link";
 import { Reveal } from "@/components/reveal";
-import { BentoGrid, BentoCard } from "@/components/bento-card";
-import { VisitorCount } from "@/components/visitor-count";
+import { ProjectCard, ProjectGrid } from "@/components/project-card";
 import GitHubContributions from "@/components/github-contributions";
+import { Thoughts, type Thought } from "@/components/thoughts";
+import { CommandTrigger } from "@/components/command-trigger";
+import { SiteFooter } from "@/components/site-footer";
+import { MusicCard } from "@/components/music-card";
+import { songs } from "@/data/collection";
+import { getTrackMedia, spotifyTrackUrl } from "@/lib/tracks";
 import { FaGithub, FaXTwitter, FaLinkedin } from "react-icons/fa6";
-import { Mail, ChevronDown } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import {
-  SiReact, SiJavascript, SiTypescript, SiMongodb,
-  SiNextdotjs, SiNodedotjs, SiPostgresql, SiPrisma,
+  SiReact, SiTypescript, SiNextdotjs, SiNodedotjs, SiPostgresql, SiSupabase,
 } from "react-icons/si";
-import Image from "next/image";
+import type { IconType } from "react-icons";
+import { projects } from "@/data/projects";
+import { formatDate, getAllPosts } from "@/lib/posts";
+import { siteConfig } from "@/lib/site";
 
 const BIRTH_DATE = { year: 2011, month: 10, day: 4 };
 
@@ -32,15 +37,23 @@ function getCurrentAge(referenceDate = new Date()) {
   return age;
 }
 
-/* â”€â”€ simple thin section separator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-function Divider() {
-  return (
-    <div className="w-full h-px bg-gradient-to-r from-transparent via-black/[0.07] dark:via-white/[0.07] to-transparent my-12" />
-  );
-}
+const SOCIALS = [
+  { icon: FaGithub, label: "GitHub", href: siteConfig.social.github },
+  { icon: FaXTwitter, label: "X", href: siteConfig.social.x },
+  { icon: FaLinkedin, label: "LinkedIn", href: siteConfig.social.linkedin },
+  { icon: Mail, label: "Email", href: siteConfig.social.email },
+];
 
-/* â”€â”€ Thoughts accordion data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-const THOUGHTS = [
+const SKILLS = [
+  { Icon: SiReact, label: "React", color: "#61DAFB" },
+  { Icon: SiTypescript, label: "TypeScript", color: "#3178C6" },
+  { Icon: SiNextdotjs, label: "Next.js", color: "currentColor" },
+  { Icon: SiNodedotjs, label: "Node.js", color: "#339933" },
+  { Icon: SiSupabase, label: "Supabase", color: "#3FCF8E" },
+  { Icon: SiPostgresql, label: "PostgreSQL", color: "#336791" },
+] as const;
+
+const THOUGHTS: Thought[] = [
   {
     title: "How I Use AI as a Tool, Not a Crutch",
     body: "AI accelerates my workflow, but I make sure I understand every line it helps produce. I use it for boilerplate, rapid exploration, and ideation - never as a replacement for thinking. The goal is leverage, not dependency.",
@@ -55,291 +68,124 @@ const THOUGHTS = [
   },
 ];
 
-export default function Home() {
-  const [openThought, setOpenThought] = useState<number | null>(null);
+const section = "px-6 sm:px-10 py-10";
+const heading = "font-serif text-[26px] sm:text-3xl font-normal text-foreground leading-tight mb-5";
+const seeAll =
+  "inline-flex items-center gap-1 py-1.5 text-sm text-muted hover:text-foreground transition-colors duration-200 group";
+const chip =
+  "inline-flex items-center gap-1.5 rounded-[4px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-white/[0.04] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-3 py-1.5 text-xs font-medium text-foreground tracking-tight transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-white/10 active:scale-[0.98]";
+
+/** Inline tech mention with its logo, used inside the bio sentence. */
+function Tech({ Icon, label, color }: { Icon: IconType; label: string; color?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 align-baseline font-medium text-foreground whitespace-nowrap">
+      <Icon className="w-3.5 h-3.5 shrink-0" style={color ? { color } : undefined} aria-hidden />
+      {label}
+    </span>
+  );
+}
+
+export default async function Home() {
   const currentAge = getCurrentAge();
+  const featuredSong = songs.find((s) => s.title === siteConfig.featuredSongTitle) ?? songs[0];
+  const featuredMedia = await getTrackMedia(featuredSong?.appleId);
+  const featured = projects.filter((p) => p.featured);
+  const latestPosts = getAllPosts().slice(0, 3);
 
   return (
-    <main className="pb-0 pt-12 sm:pt-20">
+    <main>
+      {/* breathing room + top boundary */}
+      <div className="h-20 sm:h-36" />
+      <div className="rule" />
 
-      {/* â”€â”€ HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.1}>
-        <header className="flex items-center justify-between mb-16 sm:mb-24">
-          <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-[3px] border-background shadow-lg ring-1 ring-border">
-              <Image
-                src="/assets/mainphotoofaayan.jpg"
-                alt="Aayan Sharma"
-                fill
-                sizes="80px"
-                className="object-cover"
-                priority
-              />
-            </div>
-            <div>
-              <h1 className="font-serif text-3xl sm:text-4xl text-foreground !tracking-[0.01em] italic font-medium leading-none">
-                Aayan Sharma
-              </h1>
-              <p className="text-muted text-sm mt-1">{currentAge} | Developer | Builder | Web Dev</p>
-            </div>
-          </div>
-          <ThemeToggle />
-        </header>
-      </Reveal>
-
-      {/* â”€â”€ BIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.2}>
-        <section className="mb-6">
-          <div className="text-lg sm:text-xl text-muted leading-relaxed font-sans -tracking-[0.02em] max-w-3xl space-y-3">
-            <p>
-              <span className="font-medium text-foreground">I turn ideas into real products on the internet.</span>
-            </p>
-            <p>
-              I&apos;m <span className="text-foreground font-medium">Aayan Sharma</span>, a full stack developer focused on shipping real products, fast.
-            </p>
-            <p>
-              While most people are still planning, I&apos;m already shipping - building full-stack apps, experimenting with AI, and launching things people can actually use.
-            </p>
-            <p>
-              I don&apos;t care about hype or perfect code. I care about execution - taking something from zero to live, testing it with real users, and improving it fast. Every project I build is part of that process.
-            </p>
-          </div>
-
-          <div className="mt-8 flex gap-3">
-            {[
-              { icon: FaGithub, label: "GitHub", href: "https://github.com/Aayan15728" },
-              { icon: FaXTwitter, label: "X", href: "https://x.com/aayanships" },
-              { icon: FaLinkedin, label: "LinkedIn", href: "https://www.linkedin.com/in/aayan-sharma91/" },
-              { icon: Mail, label: "Email", href: "mailto:realgenz11@gmail.com" },
-            ].map((social, i) => (
-              <a
-                key={i}
-                href={social.href}
-                aria-label={`${social.label} profile of Aayan Sharma`}
-                className="w-10 h-10 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-300 rounded-full flex items-center justify-center text-foreground hover:scale-105 active:scale-95"
-              >
-                <social.icon className="w-[18px] h-[18px]" />
-              </a>
-            ))}
-          </div>
-        </section>
-      </Reveal>
-
-      {/* â”€â”€ SPOTIFY EMBED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.25}>
-        <div className="mt-6 mb-2">
-          <iframe
-            data-testid="embed-iframe"
-            style={{ borderRadius: "12px" }}
-            src="https://open.spotify.com/embed/track/3LlmKSHR3Rs0Y3KHQLAYDk?utm_source=generator&theme=0"
-            width="100%"
-            height="152"
-            frameBorder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-          />
-        </div>
-      </Reveal>
-
-
-      <Divider />
-
-      {/* â”€â”€ PROJECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.4}>
-        <section className="mb-16">
-          <p className="text-xs font-semibold tracking-widest text-muted/50 uppercase mb-1">Featured</p>
-          <h2 className="font-serif text-xl sm:text-2xl text-foreground -tracking-[0.01em] mb-6">
-            🚀 Featured Projects
-          </h2>
-          <BentoGrid>
-            <BentoCard
-              title="ZeroMRR"
-              description="A platform where founders share their journey and compete through real progress. Built to make building in public more engaging, consistent, and real."
-              href="https://zeromrr.netlify.app"
-              imageSrc="/assets/zeromrr.png"
-            />
-            <BentoCard
-              title="GenZGames"
-              description="Fast, simple, and addictive web games built for the GenZ internet. Focused on speed, fun, and keeping users coming back."
-              href="https://genzgames.fun"
-              imageSrc="/assets/genzgames.png"
-            />
-            <BentoCard
-              title="FUTSnaps91"
-              description="A football content brand built around edits, highlights, and audience engagement. Exploring content, distribution, and building an online audience."
-              href="https://youtube.com/@futsnaps91"
-              imageSrc="/assets/futsnaps91.png"
-            />
-            <BentoCard
-              title="SwiftYourLink"
-              description="A simple tool to manage and share multiple links through one clean profile. Built for creators who want speed and simplicity."
-              href="https://swiftyourlink.vercel.app"
-              imageSrc="/assets/swiftyourlink.png"
-            />
-          </BentoGrid>
-        </section>
-      </Reveal>
-
-      <Divider />
-
-      {/* â”€â”€ ABOUT ME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.45}>
-        <section className="mb-16">
-          {/* label */}
-          <p className="text-xs font-semibold tracking-widest text-muted/50 uppercase mb-1">About</p>
-          <h2 className="font-serif text-xl sm:text-2xl text-foreground -tracking-[0.01em] mb-6">Me</h2>
-
-          <div className="flex flex-col sm:flex-row gap-6">
-            {/* Square avatar */}
-            <div className="relative flex-shrink-0 w-[130px] h-[130px] rounded-2xl overflow-hidden border border-black/[0.07] dark:border-white/[0.07] shadow-sm">
-              <Image
-                src="/assets/mainphotoofaayan.jpg"
-                alt="Aayan Sharma"
-                fill
-                sizes="130px"
-                className="object-cover"
-              />
-            </div>
-
-            {/* Text + skills */}
-            <div className="flex flex-col justify-center gap-3">
-              <h3 className="font-serif text-2xl sm:text-3xl text-foreground italic -tracking-[0.01em] leading-none">
-                Aayan Sharma
-              </h3>
-              <p className="text-sm sm:text-base text-muted leading-relaxed max-w-md">
-                I&apos;m a{" "}
-                <span className="text-foreground font-medium">Full Stack Developer</span> &amp; Open Source Contributor.
-                  Also a Student, {currentAge} Years. I love building products to solve
-                  real-world problems.{" "}
-                <span className="text-foreground/70">I&apos;m specialized in building MVPs.</span>
-              </p>
-
-              {/* Skills */}
-              <div>
-                <p className="text-xs text-muted/50 mb-2">Skills</p>
-                <div className="flex flex-wrap gap-2">
-                  {([
-                    { Icon: SiReact,      label: "React",      color: "#61DAFB" },
-                    { Icon: SiJavascript, label: "JavaScript", color: "#F7DF1E" },
-                    { Icon: SiTypescript, label: "TypeScript", color: "#3178C6" },
-                    { Icon: SiMongodb,    label: "MongoDB",    color: "#47A248" },
-                    { Icon: SiNextdotjs,  label: "Next.js",    color: "currentColor" },
-                    { Icon: SiNodedotjs,  label: "Node.js",    color: "#339933" },
-                    { Icon: SiPostgresql, label: "PostgreSQL", color: "#336791" },
-                    { Icon: SiPrisma,     label: "Prisma",     color: "currentColor" },
-                  ] as const).map(({ Icon, label, color }) => (
-                    <div key={label} className="group relative">
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/15 transition-all duration-200 hover:scale-110 cursor-default"
-                        style={{ color }}
-                      >
-                        <Icon className="w-[18px] h-[18px]" />
-                      </div>
-                      {/* tooltip */}
-                      <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-md z-10">
-                        {label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+      {/* HERO */}
+      <Reveal delay={0.05}>
+        <section className="px-6 sm:px-10 pt-10 pb-10">
+          <header className="flex items-start gap-4 sm:gap-6 mb-8">
+            <div className="relative shrink-0 w-[84px] h-[84px] sm:w-[104px] sm:h-[104px] rounded-2xl p-1.5 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 shadow-sm">
+              <div className="relative w-full h-full rounded-xl overflow-hidden">
+                <Image
+                  src="/assets/profile.jpg"
+                  alt={siteConfig.name}
+                  fill
+                  sizes="104px"
+                  className="object-cover"
+                  priority
+                />
               </div>
             </div>
+
+            <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+              <div className="min-w-0 sm:pt-3">
+                <h1 className="font-serif text-[28px] sm:text-[42px] font-normal leading-[1.15] text-foreground">
+                  Hi, I&apos;m {siteConfig.name}
+                </h1>
+                <p className="font-serif text-base sm:text-lg text-muted mt-1">
+                  {currentAge}y &bull; dev &bull; builder &bull; web dev
+                </p>
+              </div>
+              <CommandTrigger className="shrink-0 hidden sm:inline-flex" />
+            </div>
+          </header>
+
+          <div className="text-[15px] sm:text-base text-muted leading-[1.85] space-y-4">
+            <p>
+              I&apos;m a{" "}
+              <span className="relative inline-block font-medium text-foreground">
+                Full Stack Developer
+                <svg
+                  aria-hidden
+                  viewBox="0 0 100 8"
+                  preserveAspectRatio="none"
+                  className="absolute left-0 -bottom-1 w-full h-2 text-foreground/50"
+                >
+                  <path
+                    d="M1 5.5 C 22 1.5, 48 7.5, 99 3"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>{" "}
+              focused on shipping real products, fast. I use{" "}
+              <Tech Icon={SiReact} label="React" color="#61DAFB" /> and{" "}
+              <Tech Icon={SiNextdotjs} label="Next.js" /> to build frontends,{" "}
+              <Tech Icon={SiNodedotjs} label="Node.js" color="#339933" /> for backends, with{" "}
+              <Tech Icon={SiSupabase} label="Supabase" color="#3FCF8E" /> for data and auth.
+            </p>
+            <p>
+              While most people are still planning, I&apos;m already shipping - building full-stack apps,
+              experimenting with AI, and launching things people can actually use.
+            </p>
+            <p>
+              I don&apos;t care about hype or perfect code. I care about execution - taking something from zero to
+              live, testing it with real users, and improving it fast.
+            </p>
           </div>
-        </section>
-      </Reveal>
 
-      <Divider />
+          <ul className="mt-6 space-y-1.5 text-[15px] text-muted">
+            <li className="flex items-center gap-2.5">
+              <span aria-hidden className="text-muted/60">&#10022;</span>
+              <span>
+                <span className="text-foreground font-medium">Open source</span> contributor
+              </span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <span aria-hidden className="text-muted/60">&#10022;</span>
+              <span>
+                Specialized in building <span className="text-foreground font-medium">MVPs</span>
+              </span>
+            </li>
+          </ul>
 
-      {/* â”€â”€ GITHUB ACTIVITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.5}>
-        <section className="mb-16">
-          <p className="text-xs font-semibold tracking-widest text-muted/50 uppercase mb-1">Featured</p>
-          <h2 className="font-serif text-xl sm:text-2xl text-foreground -tracking-[0.01em] mb-6">
-            GitHub Activity
-          </h2>
-          <div className="rounded-2xl border border-black/[0.07] dark:border-white/[0.07] bg-white/70 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5">
-            <GitHubContributions username="aayan15728" />
-          </div>
-        </section>
-      </Reveal>
-
-      <Divider />
-
-      {/* â”€â”€ THOUGHTS (accordion) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.55}>
-        <section className="mb-16">
-          <h2 className="font-serif text-xl sm:text-2xl text-muted/60 -tracking-[0.01em] mb-6">Thoughts</h2>
-          <div className="divide-y divide-black/[0.05] dark:divide-white/[0.05]">
-            {THOUGHTS.map((t, i) => {
-              const isOpen = openThought === i;
-              return (
-                <div key={i}>
-                  <button
-                    onClick={() => setOpenThought(isOpen ? null : i)}
-                    className="w-full flex items-center justify-between py-4 gap-4 text-left group"
-                  >
-                    <span className={`text-sm sm:text-base font-medium transition-colors duration-200 ${
-                      isOpen ? "text-accent" : "text-foreground/80 group-hover:text-foreground"
-                    }`}>
-                      {t.title}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 flex-shrink-0 text-muted/50 transition-transform duration-300 ${
-                        isOpen ? "rotate-180 text-accent" : ""
-                      }`}
-                    />
-                  </button>
-                  {/* Animated expand */}
-                  <div
-                    className="overflow-hidden transition-all duration-300 ease-in-out"
-                    style={{ maxHeight: isOpen ? "200px" : "0px", opacity: isOpen ? 1 : 0 }}
-                  >
-                    <p className="pb-5 text-sm text-muted leading-relaxed max-w-2xl">
-                      {t.body}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      </Reveal>
-
-      <Divider />
-
-      {/* â”€â”€ QUOTE CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-	      <Reveal delay={0.6}>
-	        <div className="mb-16 rounded-2xl border border-black/[0.07] dark:border-white/[0.07] bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm p-6 sm:p-8">
-	          <div className="font-serif text-5xl text-muted/20 leading-none mb-4 select-none">&ldquo;&ldquo;</div>
-	          <p className="font-serif italic text-xl sm:text-2xl text-foreground/80 leading-relaxed mb-4">
-	            &ldquo;Just Become Irreplaceable.&rdquo;
-	          </p>
-	          <p className="text-sm text-right text-muted">
-	            &mdash; <span className="text-accent font-medium">Aayan Sharma</span>
-	          </p>
-	        </div>
-	      </Reveal>
-
-      {/* â”€â”€ LET'S CONNECT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <Reveal delay={0.65}>
-        <section className="mb-10">
-          <h2 className="font-serif text-xl sm:text-2xl text-foreground -tracking-[0.01em] mb-1">
-            Let&apos;s connect
-          </h2>
-	          <p className="text-sm text-muted mb-6">Find me on these platforms</p>
-	          <div className="flex flex-wrap gap-3">
-	            {[
-	              { Icon: FaGithub,   label: "GitHub",   href: "https://github.com/Aayan15728" },
-	              { Icon: FaXTwitter, label: "X",        href: "https://x.com/aayanships" },
-	              { Icon: FaLinkedin, label: "LinkedIn", href: "https://www.linkedin.com/in/aayan-sharma91/" },
-	            ].map(({ Icon, label, href }) => (
-              <a
-                key={label}
-                href={href}
-                aria-label={`${label} profile of Aayan Sharma`}
-                className="flex items-center gap-2 px-4 py-[9px] rounded-full border border-black/[0.09] dark:border-white/[0.09] bg-white/70 dark:bg-white/[0.04] hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-200 text-sm font-medium text-foreground/80 hover:text-foreground hover:scale-[1.02] active:scale-95 shadow-sm"
-              >
-                <Icon className="w-[15px] h-[15px]" />
+          <p className="mt-8 mb-3 text-sm text-muted">
+            Here are my <span className="text-foreground font-medium">socials</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SOCIALS.map(({ icon: Icon, label, href }) => (
+              <a key={label} href={href} aria-label={`${label} profile of ${siteConfig.name}`} className={chip}>
+                <Icon className="w-3.5 h-3.5" />
                 {label}
               </a>
             ))}
@@ -347,20 +193,141 @@ export default function Home() {
         </section>
       </Reveal>
 
-      {/* â”€â”€ FOOTER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <footer className="pt-6 pb-10 border-t border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted">
-            Design &amp; Developed by{" "}
-            <span className="text-accent font-medium">Aayan</span>
-          </p>
-          <p className="text-xs text-muted/50 mt-0.5">&copy; 2026. All rights reserved.</p>
-        </div>
-        <VisitorCount />
-      </footer>
+      <div className="rule" />
 
+      {/* MUSIC */}
+      <Reveal>
+        <section className="px-6 sm:px-10 py-8">
+          {featuredSong && (
+            <MusicCard
+              title={featuredSong.title}
+              artist={featuredSong.artist}
+              artworkUrl={featuredMedia.artworkUrl}
+              previewUrl={featuredMedia.previewUrl}
+              spotifyUrl={spotifyTrackUrl(featuredSong.spotifyId) ?? featuredSong.href ?? null}
+            />
+          )}
+        </section>
+      </Reveal>
+
+      <div className="rule" />
+
+      {/* SKILLS */}
+      <Reveal>
+        <section className={section}>
+          <h2 className={heading}>Skills</h2>
+          <div className="flex flex-wrap gap-2">
+            {SKILLS.map(({ Icon, label, color }) => (
+              <div key={label} className="group relative">
+                {/* focusable so the label also shows on tap (touch) and keyboard focus, not just mouse hover */}
+                <div
+                  tabIndex={0}
+                  role="img"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-lg flex items-center justify-center border border-dashed border-neutral-300/80 dark:border-neutral-700/80 bg-neutral-100/50 dark:bg-white/[0.04] hover:bg-neutral-200/60 dark:hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-accent transition-colors duration-200 cursor-default"
+                  style={{ color }}
+                >
+                  <Icon className="w-[18px] h-[18px]" aria-hidden />
+                </div>
+                <div aria-hidden className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-foreground text-background text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 shadow-md z-10">
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </Reveal>
+
+      <div className="rule" />
+
+      {/* PROJECTS */}
+      <Reveal>
+        <section className={section}>
+          <div className="flex items-end justify-between mb-5">
+            <h2 className={`${heading} !mb-0`}>Projects</h2>
+            <Link href="/projects" className={seeAll}>
+              See all <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+          <ProjectGrid>
+            {featured.map((p, i) => (
+              <ProjectCard key={p.title} project={p} wide={i === 0 && featured.length % 2 === 1} />
+            ))}
+          </ProjectGrid>
+        </section>
+      </Reveal>
+
+      {latestPosts.length > 0 && (
+        <>
+          <div className="rule" />
+          {/* WRITINGS */}
+          <Reveal>
+            <section className={section}>
+              <div className="flex items-end justify-between mb-3">
+                <h2 className={`${heading} !mb-0`}>Writings</h2>
+                <Link href="/writings" className={seeAll}>
+                  See all <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+              <ul className="divide-y divide-dashed divide-neutral-300/80 dark:divide-neutral-700/80">
+                {latestPosts.map((post) => (
+                  <li key={post.slug}>
+                    <Link
+                      href={`/writings/${post.slug}`}
+                      className="flex items-baseline justify-between gap-4 py-3.5 group"
+                    >
+                      <span className="text-[15px] font-medium text-foreground/90 group-hover:text-accent transition-colors duration-200">
+                        {post.title}
+                      </span>
+                      <span className="text-xs text-muted whitespace-nowrap">{formatDate(post.date)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </Reveal>
+        </>
+      )}
+
+      <div className="rule" />
+
+      {/* GITHUB ACTIVITY */}
+      <Reveal>
+        <section className={section}>
+          <h2 className={heading}>GitHub Activity</h2>
+          <div className="rounded-xl border border-dashed border-neutral-300/80 dark:border-neutral-700/80 bg-neutral-100/40 dark:bg-white/[0.03] p-3">
+            <GitHubContributions username={siteConfig.githubUsername} />
+          </div>
+        </section>
+      </Reveal>
+
+      <div className="rule" />
+
+      {/* THOUGHTS */}
+      <Reveal>
+        <section className={section}>
+          <h2 className={heading}>Thoughts</h2>
+          <Thoughts items={THOUGHTS} />
+        </section>
+      </Reveal>
+
+      <div className="rule" />
+
+      {/* QUOTE */}
+      <Reveal>
+        <section className={section}>
+          <p className="font-serif text-2xl sm:text-[28px] text-foreground leading-snug">
+            &ldquo;Just Become Irreplaceable.&rdquo;
+          </p>
+          <p className="text-sm text-muted mt-3">
+            &mdash; <span className="text-accent font-medium">{siteConfig.name}</span>
+          </p>
+        </section>
+      </Reveal>
+
+      <div className="rule" />
+
+      <SiteFooter />
     </main>
   );
 }
-
-
